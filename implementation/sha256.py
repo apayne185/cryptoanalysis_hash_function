@@ -26,7 +26,7 @@ def find_prefix(prefix):
 
 
 def main():
-    targets = ['beef', 'babe', 'deadbeef']
+    targets = ['cafe', 'faded', 'decade']
     results = [] 
 
     for t in targets:
@@ -34,7 +34,7 @@ def main():
         results.append(find_prefix(t))
 
     solution = ','.join(results)
-    sol_path = os.path.join(os.path.dirname(__file__), '..', 'solutions', 'exercise04.txt')
+    sol_path = os.path.join(os.path.dirname(__file__), '..', 'solutions', 'exercise06.txt')
     os.makedirs(os.path.dirname(sol_path), exist_ok=True)
 
 

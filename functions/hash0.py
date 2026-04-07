@@ -4,7 +4,7 @@ def xor32_hash(s: str) -> str:
     h = 0
     for i, c in enumerate(s):
         shift = (i % 4) * 8
-        h ^= (ord(c) << shift)
+        h ^= (ord(c) << shift)      #XOR
     return f"{h & 0xFFFFFFFF:08x}"  # Lower 32 bits as hex
 
 def usage():
