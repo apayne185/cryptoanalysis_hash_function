@@ -25,6 +25,16 @@ the attack implementations and solutions were written independently.
 - The PDF was moved to `docs/` and the README rewritten to frame the repo around the
   security properties being demonstrated rather than as assignment submissions.
 
+## Blue-team tooling (`tools/`)
+
+Added after the coursework/cleanup phase, on a separate branch, to turn the cryptanalysis
+exercises into something closer to security tooling: a file integrity monitor, a hash-based
+IOC matcher, and a password hash security audit demo. All three build directly on the
+SHA-256 properties (collision resistance, preimage resistance, cost of brute force)
+demonstrated in `findings/`. The IOC matcher ships with the SHA-256 of the EICAR standard
+antivirus test file as its sample indicator — a real, publicly documented, harmless
+signature — rather than fabricated or real malware hashes.
+
 ## Modeling / implementation notes
 
 - `hash0.py` (XOR-based) and `hash1.py` (djb2-style, `h = h*31 + c`) are both intentionally
