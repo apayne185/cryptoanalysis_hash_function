@@ -11,20 +11,11 @@ def load_wordlist():
         return [line.strip() for line in f if line.strip()]
 
 
-def crack_unsalted(target_digest, algo, wordlist):
+def crack(target_digest, wordlist, hash_fn):
+    """Dictionary-attack target_digest, hashing each wordlist entry with hash_fn(word)."""
     start = time.perf_counter()
     for i, word in enumerate(wordlist, start=1):
-        digest = hashlib.new(algo, word.encode()).hexdigest()
-        if digest == target_digest:
-            return word, i, time.perf_counter() - start
-    return None, len(wordlist), time.perf_counter() - start
-
-
-def crack_salted_pbkdf2(target_digest, salt, iterations, wordlist):
-    start = time.perf_counter()
-    for i, word in enumerate(wordlist, start=1):
-        digest = hashlib.pbkdf2_hmac('sha256', word.encode(), salt, iterations).hex()
-        if digest == target_digest:
+        if hash_fn(word) == target_digest:
             return word, i, time.perf_counter() - start
     return None, len(wordlist), time.perf_counter() - start
 
@@ -35,14 +26,16 @@ def demo(password, iterations):
 
     for algo in ('md5', 'sha1'):
         target = hashlib.new(algo, password.encode()).hexdigest()
-        found, attempts, elapsed = crack_unsalted(target, algo, wordlist)
+        hash_fn = lambda word, algo=algo: hashlib.new(algo, word.encode()).hexdigest()
+        found, attempts, elapsed = crack(target, wordlist, hash_fn)
         status = f"cracked as {found!r}" if found else "not found"
         print(f"unsalted {algo.upper():<5} {target}  -> {status} "
               f"({attempts} attempts, {elapsed*1000:.2f} ms)")
 
     salt = os.urandom(16)
     target = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, iterations).hex()
-    found, attempts, elapsed = crack_salted_pbkdf2(target, salt, iterations, wordlist)
+    hash_fn = lambda word: hashlib.pbkdf2_hmac('sha256', word.encode(), salt, iterations).hex()
+    found, attempts, elapsed = crack(target, wordlist, hash_fn)
     status = f"cracked as {found!r}" if found else "not found"
     print(f"salted PBKDF2-SHA256 ({iterations} iters)  -> {status} "
           f"({attempts} attempts, {elapsed*1000:.2f} ms)")

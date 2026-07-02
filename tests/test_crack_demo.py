@@ -1,9 +1,7 @@
 import hashlib
 import os
-import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'tools', 'password_hash_audit'))
-from crack_demo import crack_unsalted, crack_salted_pbkdf2, load_wordlist  # noqa: E402
+from crack_demo import crack, load_wordlist
 
 
 def test_load_wordlist_nonempty():
@@ -15,14 +13,14 @@ def test_load_wordlist_nonempty():
 def test_crack_unsalted_md5_finds_known_password():
     password = 'password123'
     target = hashlib.md5(password.encode()).hexdigest()
-    found, attempts, _ = crack_unsalted(target, 'md5', load_wordlist())
+    found, attempts, _ = crack(target, load_wordlist(), lambda w: hashlib.md5(w.encode()).hexdigest())
     assert found == password
     assert attempts > 0
 
 
 def test_crack_unsalted_fails_on_password_outside_wordlist():
     target = hashlib.md5(b'not-in-the-wordlist-xyz987').hexdigest()
-    found, _, _ = crack_unsalted(target, 'md5', load_wordlist())
+    found, _, _ = crack(target, load_wordlist(), lambda w: hashlib.md5(w.encode()).hexdigest())
     assert found is None
 
 
@@ -31,7 +29,8 @@ def test_crack_salted_pbkdf2_finds_known_password_with_correct_salt():
     salt = os.urandom(16)
     iterations = 1000  # low iteration count so the test stays fast
     target = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, iterations).hex()
-    found, attempts, _ = crack_salted_pbkdf2(target, salt, iterations, load_wordlist())
+    hash_fn = lambda w: hashlib.pbkdf2_hmac('sha256', w.encode(), salt, iterations).hex()
+    found, attempts, _ = crack(target, load_wordlist(), hash_fn)
     assert found == password
     assert attempts > 0
 
