@@ -1,3 +1,4 @@
-_MACOSX
-functions/sha256.py
-implementation/.keep
+__pycache__/
+*.pyc
+__MACOSX/
+.DS_Store
