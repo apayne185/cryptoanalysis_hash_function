@@ -1,0 +1,4 @@
+# sha256,label
+# Real, safe, publicly documented indicator: the standard EICAR antivirus test file.
+# EICAR is not malware; every AV/EDR vendor recognizes it as a harmless self-test signature.
+275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f,EICAR-Test-File
