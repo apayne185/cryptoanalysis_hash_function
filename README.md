@@ -37,6 +37,10 @@ break by hand or with a laptop, before showing why SHA-256 resists the same atta
 | [`ioc_hash_matcher/`](tools/ioc_hash_matcher/) | Hashes files under a directory and flags any digest matching a known indicator of compromise (the core mechanism behind AV/EDR hash-based detection) |
 | [`password_hash_audit/`](tools/password_hash_audit/) | Dictionary-attacks an unsalted MD5/SHA1 password hash vs. a salted, iterated PBKDF2-SHA256 hash of the same password, and compares the cost |
 
+`tools/common/hashing.py` holds the SHA-256 file-hashing helper shared by the FIM and IOC
+matcher, including handling for unreadable files and broken symlinks so a single bad file
+doesn't abort a scan.
+
 Each tool has its own README explaining the mechanism, usage, and limitations, and is
 covered by tests in [`tests/`](tests/).
 
@@ -49,6 +53,7 @@ solutions/       bash runners that execute each attack and produce the result ar
 submissions/     result artifacts produced by the solutions scripts
 findings/        per-exercise vulnerability write-ups (PoC + real-world impact + mitigation)
 tools/           blue-team tooling built on the same hashing primitives
+                 (common/ holds the shared hashing helper)
 tests/           pytest suite for tools/
 docs/            original assignment instructions
 ```

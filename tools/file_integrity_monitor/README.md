@@ -26,6 +26,14 @@ REMOVED  b.txt  e258d2...
 MODIFIED a.txt  5891b5... -> 92e78d...
 ```
 
+## Behavior notes
+
+- Unreadable files and broken symlinks are skipped with a `WARNING` on stderr rather than
+  aborting the whole scan.
+- The baseline file is automatically excluded from its own scan, so storing `--db` inside
+  the watched directory (e.g. `fim.py baseline .`) doesn't cause the baseline to flag
+  itself as an unexpected addition on the next `check`.
+
 ## Limitations
 
 This is a demonstration of the core mechanism, not a hardened production tool: the
