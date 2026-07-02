@@ -1,23 +1,21 @@
 import argparse
 import csv
-import hashlib
 import os
 import sys
 
-
-def hash_file(path, chunk_size=65536):
-    h = hashlib.sha256()
-    with open(path, 'rb') as f:
-        for chunk in iter(lambda: f.read(chunk_size), b''):
-            h.update(chunk)
-    return h.hexdigest()
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'common'))
+from hashing import walk_and_hash  # noqa: E402
 
 
 def load_iocs(path):
     iocs = {}
     with open(path, newline='') as f:
-        for row in csv.reader(f):
-            if not row or row[0].startswith('#'):
+        for lineno, row in enumerate(csv.reader(f), start=1):
+            if not row or row[0].strip().startswith('#'):
+                continue
+            if len(row) < 2:
+                print(f"WARNING: skipping malformed IOC row {lineno} in {path}: {row}",
+                      file=sys.stderr)
                 continue
             digest, label = row[0].strip().lower(), row[1].strip()
             iocs[digest] = label
@@ -26,12 +24,9 @@ def load_iocs(path):
 
 def scan_directory(directory, iocs):
     matches = []
-    for dirpath, _, filenames in os.walk(directory):
-        for name in filenames:
-            path = os.path.join(dirpath, name)
-            digest = hash_file(path)
-            if digest in iocs:
-                matches.append((path, digest, iocs[digest]))
+    for path, digest in walk_and_hash(directory):
+        if digest in iocs:
+            matches.append((path, digest, iocs[digest]))
     return matches
 
 
