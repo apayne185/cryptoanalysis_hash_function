@@ -23,7 +23,7 @@ def main():
         results.append(find_prefix(t))
 
     solution = ','.join(results)
-    sol_path = os.path.join(os.path.dirname(__file__), '..', 'submissions', 'exercise06.txt')
+    sol_path = os.path.join(os.path.dirname(__file__), '..', 'submissions', 'exercise04.txt')
     with open(sol_path, 'w') as f:
         f.write(solution)
 
