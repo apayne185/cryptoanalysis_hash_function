@@ -1,39 +1,33 @@
 import argparse
-import hashlib
 import json
 import os
 import sys
 
-
-def hash_file(path, chunk_size=65536):
-    h = hashlib.sha256()
-    with open(path, 'rb') as f:
-        for chunk in iter(lambda: f.read(chunk_size), b''):
-            h.update(chunk)
-    return h.hexdigest()
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'common'))
+from hashing import walk_and_hash  # noqa: E402
 
 
-def scan(root):
+def scan(root, exclude=None):
     digests = {}
-    for dirpath, _, filenames in os.walk(root):
-        for name in filenames:
-            path = os.path.join(dirpath, name)
-            rel = os.path.relpath(path, root)
-            digests[rel] = hash_file(path)
+    for path, digest in walk_and_hash(root, exclude=exclude):
+        rel = os.path.relpath(path, root)
+        digests[rel] = digest
     return digests
 
 
 def cmd_baseline(args):
-    digests = scan(args.directory)
+    db_path = os.path.abspath(args.db)
+    digests = scan(args.directory, exclude=db_path)
     with open(args.db, 'w') as f:
         json.dump(digests, f, indent=2, sort_keys=True)
     print(f"Baseline written: {len(digests)} files -> {args.db}")
 
 
 def cmd_check(args):
+    db_path = os.path.abspath(args.db)
     with open(args.db) as f:
         baseline = json.load(f)
-    current = scan(args.directory)
+    current = scan(args.directory, exclude=db_path)
 
     added = sorted(set(current) - set(baseline))
     removed = sorted(set(baseline) - set(current))
