@@ -55,3 +55,25 @@ def test_scan_directory_skips_broken_symlink(tmp_path):
 
     matches = scan_directory(str(tmp_path), {})
     assert matches == []
+
+
+def test_load_iocs_rejects_empty_digest(tmp_path):
+    iocs_path = tmp_path / 'iocs.csv'
+    iocs_path.write_text(
+        ',Label-With-No-Hash\n'
+        'deadbeef,Valid-Entry\n'
+    )
+    iocs = load_iocs(str(iocs_path))
+    assert iocs == {'deadbeef': 'Valid-Entry'}
+    assert '' not in iocs
+
+
+def test_load_iocs_warns_on_duplicate_hash(tmp_path, capsys):
+    iocs_path = tmp_path / 'iocs.csv'
+    iocs_path.write_text(
+        'deadbeef,First\n'
+        'deadbeef,Second\n'
+    )
+    iocs = load_iocs(str(iocs_path))
+    assert iocs == {'deadbeef': 'Second'}
+    assert 'duplicate hash' in capsys.readouterr().err

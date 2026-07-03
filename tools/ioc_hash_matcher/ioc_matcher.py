@@ -18,6 +18,12 @@ def load_iocs(path):
                       file=sys.stderr)
                 continue
             digest, label = row[0].strip().lower(), row[1].strip()
+            if not digest:
+                print(f"WARNING: skipping IOC row {lineno} in {path}: empty hash", file=sys.stderr)
+                continue
+            if digest in iocs:
+                print(f"WARNING: IOC row {lineno} in {path}: duplicate hash {digest} "
+                      f"(label {iocs[digest]!r} overwritten by {label!r})", file=sys.stderr)
             iocs[digest] = label
     return iocs
 
