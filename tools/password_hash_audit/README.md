@@ -13,6 +13,9 @@ a hash is fast to invert or search.
 python3 crack_demo.py --password password123 --iterations 200000
 ```
 
+`--iterations` must be a positive integer; `0` or a negative value is rejected with a clean
+argparse error rather than crashing inside `hashlib.pbkdf2_hmac`.
+
 ## What it shows
 
 1. **Unsalted MD5/SHA1 dictionary attack** — hashing every candidate in `wordlist.txt`

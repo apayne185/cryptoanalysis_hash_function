@@ -14,7 +14,7 @@ produce the same digest, so any change is detectable.
 # record a baseline
 python3 fim.py baseline /path/to/watch --db baseline.json
 
-# later, check for drift (exit code 0 = clean, 1 = changes detected)
+# later, check for drift (exit code 0 = clean, 1 = changes detected, 2 = bad input)
 python3 fim.py check /path/to/watch --db baseline.json
 ```
 
@@ -28,11 +28,13 @@ MODIFIED a.txt  5891b5... -> 92e78d...
 
 ## Behavior notes
 
-- Unreadable files and broken symlinks are skipped with a `WARNING` on stderr rather than
-  aborting the whole scan.
+- Unreadable files, unreadable directories, broken symlinks, and non-regular files (FIFOs,
+  devices) are skipped with a `WARNING` on stderr rather than aborting or hanging the scan.
 - The baseline file is automatically excluded from its own scan, so storing `--db` inside
   the watched directory (e.g. `fim.py baseline .`) doesn't cause the baseline to flag
   itself as an unexpected addition on the next `check`.
+- `check` against a missing or corrupt baseline file prints a clean error (exit code `2`)
+  instead of a raw traceback.
 
 ## Limitations
 

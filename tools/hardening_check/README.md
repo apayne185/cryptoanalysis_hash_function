@@ -14,7 +14,12 @@ scanner.
 3. **Insecure `sshd_config` directives** — `PermitRootLogin yes`, `PasswordAuthentication yes`,
    `PermitEmptyPasswords yes`, `Protocol 1`, `X11Forwarding yes`.
 4. **Unexpected listening ports** — parses `ss -tuln` and flags any listening port outside an
-   allowlist you provide. Skipped (with a note on stderr) if `ss` isn't available.
+   allowlist you provide. Skipped (with a note on stderr) if `ss` isn't available or exits
+   with a non-zero return code (e.g. insufficient privileges) rather than being treated as
+   "zero ports found."
+
+The two file-based checks (world-writable, SUID/SGID) share a single directory walk instead
+of scanning the tree twice.
 
 ## Usage
 
@@ -22,7 +27,9 @@ scanner.
 python3 harden_check.py --root /etc --sshd-config /etc/ssh/sshd_config --allow-ports 22,80,443
 ```
 
-Exit code `0` = no findings, `1` = at least one finding (suitable for CI/cron use).
+Exit codes: `0` = no findings, `1` = at least one finding, `2` = bad input (`--root` isn't a
+directory, or `--allow-ports` isn't a comma-separated list of integers) — suitable for
+CI/cron use, where `2` should be treated as a configuration error, not "system is clean."
 
 ## Limitations
 

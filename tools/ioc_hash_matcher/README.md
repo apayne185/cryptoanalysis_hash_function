@@ -18,10 +18,13 @@ of the [EICAR standard antivirus test file](https://www.eicar.org/download-anti-
 a harmless string every AV/EDR vendor recognizes as a self-test signature, used here instead
 of real malware hashes so the demo is safe to run and share.
 
-Malformed rows (missing a label column) and comment lines are skipped with a `WARNING` on
-stderr rather than aborting the whole load — one bad line in an IOC feed shouldn't cost you
-every valid indicator in it. Unreadable files and broken symlinks in the scanned directory
-are skipped the same way.
+Malformed rows (missing a label column, or an empty hash field) and comment lines are
+skipped with a `WARNING` on stderr rather than aborting the whole load or being silently
+accepted as a valid indicator — one bad line in an IOC feed shouldn't cost you every valid
+indicator in it. A duplicate hash across rows also warns (and the later row wins) instead of
+silently overwriting the earlier label. Unreadable files, unreadable directories, broken
+symlinks, and non-regular files (FIFOs, devices) in the scanned directory are skipped the
+same way.
 
 ## Limitations
 
