@@ -35,6 +35,11 @@ demonstrated in `findings/`. The IOC matcher ships with the SHA-256 of the EICAR
 antivirus test file as its sample indicator — a real, publicly documented, harmless
 signature — rather than fabricated or real malware hashes.
 
+A fourth tool, `hardening_check/`, was added afterward and isn't hashing-based — it audits
+world-writable files, unexpected SUID/SGID binaries, insecure `sshd_config` directives, and
+unexpected listening ports. It's a narrower, illustrative set of checks, not a full
+CIS-benchmark-style auditor (see its README's Limitations section).
+
 ## Modeling / implementation notes
 
 - `hash0.py` (XOR-based) and `hash1.py` (djb2-style, `h = h*31 + c`) are both intentionally

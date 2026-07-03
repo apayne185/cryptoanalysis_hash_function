@@ -7,8 +7,8 @@ attack as a mini security finding: vulnerability, proof of concept, real-world i
 mitigation.
 
 The `tools/` directory extends this into practical blue-team tooling built on the same
-hashing primitives: file integrity monitoring, IOC-based threat detection, and password
-hash security auditing.
+hashing primitives — file integrity monitoring, IOC-based threat detection, and password
+hash security auditing — plus a general system hardening checker.
 
 **Stack:** Python · Bash · SHA-256 · Birthday-paradox cryptanalysis · Proof-of-work · pytest
 
@@ -36,6 +36,7 @@ break by hand or with a laptop, before showing why SHA-256 resists the same atta
 | [`file_integrity_monitor/`](tools/file_integrity_monitor/) | Baselines SHA-256 hashes of a directory tree and detects additions/removals/modifications on later scans (the Tripwire/AIDE pattern) |
 | [`ioc_hash_matcher/`](tools/ioc_hash_matcher/) | Hashes files under a directory and flags any digest matching a known indicator of compromise (the core mechanism behind AV/EDR hash-based detection) |
 | [`password_hash_audit/`](tools/password_hash_audit/) | Dictionary-attacks an unsalted MD5/SHA1 password hash vs. a salted, iterated PBKDF2-SHA256 hash of the same password, and compares the cost |
+| [`hardening_check/`](tools/hardening_check/) | Audits a Linux system for world-writable files, unexpected SUID/SGID binaries, insecure `sshd_config` directives, and unexpected listening ports |
 
 `tools/common/hashing.py` holds the SHA-256 file-hashing helper shared by the FIM and IOC
 matcher, including handling for unreadable files and broken symlinks so a single bad file
@@ -69,6 +70,7 @@ bash solutions/solve04.sh   # SHA-256 partial-preimage search (brute-force, seco
 python3 tools/file_integrity_monitor/fim.py baseline <dir> --db baseline.json
 python3 tools/ioc_hash_matcher/ioc_matcher.py <dir>
 python3 tools/password_hash_audit/crack_demo.py
+python3 tools/hardening_check/harden_check.py --root /etc --allow-ports 22,80,443
 
 python3 -m pytest tests/    # run the test suite
 ```
