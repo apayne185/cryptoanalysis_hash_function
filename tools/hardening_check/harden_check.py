@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 import stat
 import subprocess
 import sys
@@ -20,10 +21,18 @@ INSECURE_SSHD_DIRECTIVES = {
     'x11forwarding': {'yes'},
 }
 
+_ADDR_PORT_RE = re.compile(r'^.+:(\d+)$')
 
-def find_world_writable_files(root):
-    findings = []
-    for dirpath, _, filenames in os.walk(root):
+
+def _on_walk_error(error):
+    print(f"WARNING: skipping directory, cannot list {error.filename}: {error}", file=sys.stderr)
+
+
+def scan_permissions(root, suid_allowlist=DEFAULT_SUID_ALLOWLIST):
+    """Single walk over root, returning (world_writable_paths, unexpected_suid_sgid_paths)."""
+    world_writable = []
+    suid_sgid = []
+    for dirpath, _, filenames in os.walk(root, onerror=_on_walk_error):
         for name in filenames:
             path = os.path.join(dirpath, name)
             try:
@@ -33,24 +42,10 @@ def find_world_writable_files(root):
             if stat.S_ISLNK(st.st_mode):
                 continue
             if st.st_mode & stat.S_IWOTH:
-                findings.append(path)
-    return findings
-
-
-def find_suid_sgid_binaries(root, allowlist=DEFAULT_SUID_ALLOWLIST):
-    findings = []
-    for dirpath, _, filenames in os.walk(root):
-        for name in filenames:
-            path = os.path.join(dirpath, name)
-            try:
-                st = os.lstat(path)
-            except OSError:
-                continue
-            if stat.S_ISLNK(st.st_mode):
-                continue
-            if st.st_mode & (stat.S_ISUID | stat.S_ISGID) and path not in allowlist:
-                findings.append(path)
-    return findings
+                world_writable.append(path)
+            if st.st_mode & (stat.S_ISUID | stat.S_ISGID) and path not in suid_allowlist:
+                suid_sgid.append(path)
+    return world_writable, suid_sgid
 
 
 def check_sshd_config(text):
@@ -71,19 +66,22 @@ def check_sshd_config(text):
 
 
 def parse_ss_output(output, allowed_ports):
-    """Parse `ss -tuln` output, return [(port, local_address)] for ports not in allowed_ports."""
+    """Parse `ss -tuln` output, return [(port, local_address)] for ports not in allowed_ports.
+
+    Identifies the local-address column by pattern (ends in ':<digits>') rather than a
+    fixed column index, so it isn't thrown off by ss builds that add extra columns
+    (e.g. a trailing Process column).
+    """
     unexpected = []
     for line in output.splitlines()[1:]:
-        cols = line.split()
-        if len(cols) < 5:
-            continue
-        local_addr = cols[4]
-        port_str = local_addr.rsplit(':', 1)[-1]
-        if not port_str.isdigit():
-            continue
-        port = int(port_str)
-        if port not in allowed_ports:
-            unexpected.append((port, local_addr))
+        for col in line.split():
+            m = _ADDR_PORT_RE.match(col)
+            if not m:
+                continue
+            port = int(m.group(1))
+            if port not in allowed_ports:
+                unexpected.append((port, col))
+            break
     return unexpected
 
 
@@ -92,6 +90,8 @@ def check_listening_ports(allowed_ports):
     try:
         result = subprocess.run(['ss', '-tuln'], capture_output=True, text=True, timeout=5)
     except (FileNotFoundError, subprocess.TimeoutExpired):
+        return [], False
+    if result.returncode != 0:
         return [], False
     return parse_ss_output(result.stdout, allowed_ports), True
 
@@ -108,16 +108,24 @@ def main():
                          help='comma-separated list of expected listening ports')
     args = parser.parse_args()
 
-    allowed_ports = {int(p) for p in args.allow_ports.split(',') if p.strip()}
+    if not os.path.isdir(args.root):
+        print(f"ERROR: --root {args.root!r} is not a directory", file=sys.stderr)
+        return 2
+
+    try:
+        allowed_ports = {int(p) for p in args.allow_ports.split(',') if p.strip()}
+    except ValueError:
+        print(f"ERROR: --allow-ports must be a comma-separated list of integers, got {args.allow_ports!r}",
+              file=sys.stderr)
+        return 2
+
     findings_found = False
 
-    writable = find_world_writable_files(args.root)
+    writable, suid = scan_permissions(args.root)
     if writable:
         findings_found = True
         for path in writable:
             print(f"WORLD-WRITABLE  {path}")
-
-    suid = find_suid_sgid_binaries(args.root)
     if suid:
         findings_found = True
         for path in suid:
@@ -133,7 +141,7 @@ def main():
 
     ports, ss_available = check_listening_ports(allowed_ports)
     if not ss_available:
-        print("NOTE: 'ss' not available, skipping listening-port check", file=sys.stderr)
+        print("NOTE: 'ss' unavailable or failed, skipping listening-port check", file=sys.stderr)
     elif ports:
         findings_found = True
         for port, addr in ports:
