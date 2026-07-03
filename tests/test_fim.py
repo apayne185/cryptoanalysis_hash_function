@@ -54,3 +54,22 @@ def test_baseline_stored_inside_watched_dir_does_not_self_flag(tmp_path):
 
     cmd_baseline(Args(str(watched), str(db)))
     assert cmd_check(Args(str(watched), str(db))) == 0
+
+
+def test_check_missing_baseline_returns_error_instead_of_crashing(tmp_path, capsys):
+    watched = tmp_path / 'watched'
+    watched.mkdir()
+    db = tmp_path / 'does-not-exist.json'
+
+    assert cmd_check(Args(str(watched), str(db))) == 2
+    assert 'not found' in capsys.readouterr().err
+
+
+def test_check_corrupt_baseline_returns_error_instead_of_crashing(tmp_path, capsys):
+    watched = tmp_path / 'watched'
+    watched.mkdir()
+    db = tmp_path / 'corrupt.json'
+    db.write_text('{not valid json')
+
+    assert cmd_check(Args(str(watched), str(db))) == 2
+    assert 'not valid JSON' in capsys.readouterr().err

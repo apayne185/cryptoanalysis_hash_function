@@ -25,8 +25,15 @@ def cmd_baseline(args):
 
 def cmd_check(args):
     db_path = os.path.abspath(args.db)
-    with open(args.db) as f:
-        baseline = json.load(f)
+    try:
+        with open(args.db) as f:
+            baseline = json.load(f)
+    except FileNotFoundError:
+        print(f"ERROR: baseline {args.db!r} not found, run `baseline` first", file=sys.stderr)
+        return 2
+    except json.JSONDecodeError as e:
+        print(f"ERROR: baseline {args.db!r} is not valid JSON: {e}", file=sys.stderr)
+        return 2
     current = scan(args.directory, exclude=db_path)
 
     added = sorted(set(current) - set(baseline))
