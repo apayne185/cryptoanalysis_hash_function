@@ -11,6 +11,13 @@ def load_wordlist():
         return [line.strip() for line in f if line.strip()]
 
 
+def positive_int(value):
+    n = int(value)
+    if n <= 0:
+        raise argparse.ArgumentTypeError(f"must be a positive integer, got {value!r}")
+    return n
+
+
 def crack(target_digest, wordlist, hash_fn):
     """Dictionary-attack target_digest, hashing each wordlist entry with hash_fn(word)."""
     start = time.perf_counter()
@@ -56,7 +63,7 @@ def main():
     )
     parser.add_argument('--password', default='password123',
                          help='password to hash and attempt to crack (must be in wordlist.txt to be found)')
-    parser.add_argument('--iterations', type=int, default=200_000,
+    parser.add_argument('--iterations', type=positive_int, default=200_000,
                          help='PBKDF2 iteration count (higher = slower to crack, slower to verify)')
     args = parser.parse_args()
     demo(args.password, args.iterations)

@@ -1,7 +1,10 @@
+import argparse
 import hashlib
 import os
 
-from crack_demo import crack, load_wordlist
+import pytest
+
+from crack_demo import crack, load_wordlist, positive_int
 
 
 def test_load_wordlist_nonempty():
@@ -40,3 +43,13 @@ def test_same_password_different_salts_produce_different_digests():
     d1 = hashlib.pbkdf2_hmac('sha256', password, os.urandom(16), 1000).hex()
     d2 = hashlib.pbkdf2_hmac('sha256', password, os.urandom(16), 1000).hex()
     assert d1 != d2
+
+
+@pytest.mark.parametrize('value', ['0', '-5'])
+def test_positive_int_rejects_zero_and_negative(value):
+    with pytest.raises(argparse.ArgumentTypeError):
+        positive_int(value)
+
+
+def test_positive_int_accepts_positive_value():
+    assert positive_int('1000') == 1000
